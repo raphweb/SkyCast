@@ -605,8 +605,8 @@ void displayWXicon(int x, int y, String iconName, bool iconSize) {
 void drawBattery(int x, int y) {
   uint8_t percentage = 100;
   float voltage = analogRead(35) / 4096.0 * 7.46;
+  Serial.println("Voltage = " + String(voltage));
   if (voltage > 1 ) { // Only display if there is a valid reading
-    Serial.println("Voltage = " + String(voltage));
     percentage = 2836.9625 * pow(voltage, 4) - 43987.4889 * pow(voltage, 3) + 255233.8134 * pow(voltage, 2) - 656689.7123 * voltage + 632041.7303;
     if (voltage >= 4.20) percentage = 100;
     if (voltage <= 3.50) percentage = 0;
@@ -614,7 +614,7 @@ void drawBattery(int x, int y) {
     display.fillRect(x + 34, y - 10, 2, 5, GxEPD_BLACK);
     display.fillRect(x + 17, y - 10, 15 * percentage / 100.0, 6, GxEPD_BLACK);
     const char *percentageStr = String(String(percentage) + "%").c_str();
-    drawString(x + 65, y - 11, percentageStr, RIGHT);
+    drawString(x + 65, y - 11, percentageStr, TOP_RIGHT);
     //drawString(x + 13, y + 5,  String(voltage, 2) + "v", CENTER);
   }
 }
@@ -622,8 +622,8 @@ void drawBattery(int x, int y) {
 
 void drawHeadingSection(const char *dateStr, const char *timeStr) {
   u8g2Fonts.setFont(u8g2_font_helvB08_tf);
-  const char *owmCity = preferences.getString("OWM_CITY").c_str();
-  drawString(display.width() >> 1, 0, owmCity, TOP_RIGHT);
+  const String owmCity = preferences.getString("OWM_CITY");
+  drawString(display.width() >> 1, 0, owmCity.c_str(), TOP_RIGHT);
   drawString(display.width(), 0, dateStr, TOP_RIGHT);
   drawString(4, 0, timeStr, TOP_LEFT);
   drawBattery(65, 12);
