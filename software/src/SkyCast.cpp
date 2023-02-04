@@ -121,6 +121,7 @@ boolean setupTime() {
 void setup() {
   startTime = millis();
   Serial.begin(115200);
+  while(!Serial) {}
 #ifdef SAVE_CREDENTIALS
   {
     preferences.begin("SkyCast");
