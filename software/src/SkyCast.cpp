@@ -24,8 +24,8 @@ uint64_t startTime = 0;
 
 
 #define sleepDuration 30
-#define wakeupTime     7
-#define sleepTime     23
+#define wakeupTime     6
+#define sleepTime     22
 //#define SAVE_CREDENTIALS
 
 
