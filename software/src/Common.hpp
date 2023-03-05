@@ -78,7 +78,7 @@ bool decodeWeather(WiFiClient& json, String type) {
       wxForecast[r].period            = list[r]["dt_txt"].as<const char*>();                    Serial.println("Peri: "+String(wxForecast[r].period));
     }
     //------------------------------------------
-    float pressureTrend = wxForecast[0].pressure - wxForecast[2].pressure; // Measure pressure slope between ~now and later
+    float pressureTrend = wxForecast[2].pressure - wxForecast[0].pressure; // Measure pressure slope between ~now and later
     pressureTrend = ((int)(pressureTrend * 10)) / 10.0; // Remove any small variations less than 0.1
     wxConditions[0].trend = "0";
     if (pressureTrend > 0)  wxConditions[0].trend = "+";
