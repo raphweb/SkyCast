@@ -160,7 +160,6 @@ void setup() {
         do {
           displayWeather(dateStr.c_str(), timeStr.c_str());
         } while (display.nextPage());
-        display.display(false); // Full screen update mode
       }
     }
   }

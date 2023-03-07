@@ -6,7 +6,7 @@
 #include <u8g2_fonts.h>
 
 #define GxEPD2_DISPLAY_CLASS GxEPD2_BW
-#define GxEPD2_DRIVER_CLASS GxEPD2_420
+#define GxEPD2_DRIVER_CLASS GxEPD2_750_T7
 
 // Connections for e.g. LOLIN D32
 #define EPD_BUSY  4 // to EPD BUSY
@@ -26,7 +26,7 @@ GxEPD2_DISPLAY_CLASS<GxEPD2_DRIVER_CLASS, MAX_HEIGHT(GxEPD2_DRIVER_CLASS)> displ
 U8G2_FOR_ADAFRUIT_GFX u8g2Fonts;
 
 void initialiseDisplay() {
-    display.init(115200, true, 20, false/*, *(new SPIClass(HSPI)), SPISettings(4000000, MSBFIRST, SPI_MODE0)*/);
+    display.init(115200, true, 2, false/*, *(new SPIClass(HSPI)), SPISettings(4000000, MSBFIRST, SPI_MODE0)*/);
     SPI.end();
     SPI.begin(EPD_SCK, EPD_MISO, EPD_MOSI, EPD_CS);
     u8g2Fonts.begin(display);

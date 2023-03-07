@@ -9,20 +9,6 @@ float hPa_to_inHg(float value_hPa) {
   return 0.02953 * value_hPa;
 }
 
-int julianDate(int d, int m, int y) {
-  int mm, yy, k1, k2, k3, j;
-  yy = y - (int)((12 - m) / 10);
-  mm = m + 9;
-  if (mm >= 12) mm = mm - 12;
-  k1 = (int)(365.25 * (yy + 4712));
-  k2 = (int)(30.6001 * mm + 0.5);
-  k3 = (int)((int)((yy / 100) + 49) * 0.75) - 38;
-  // 'j' for dates in Julian calendar:
-  j = k1 + k2 + d + 59 + 1;
-  if (j > 2299160) j = j - k3; // 'j' is the Julian date at 12h UT (Universal Time) For Gregorian calendar:
-  return j;
-}
-
 float sumOfPrecip(float dataArray[], int readings) {
   float sum = 0;
   for (int i = 0; i < readings; i++) {
@@ -52,11 +38,37 @@ String convertUnixTime(int unix_time) {
   return output;
 }
 
-double normalizedMoonPhase(int d, int m, int y) {
-  int j = julianDate(d, m, y);
-  //Calculate the approximate phase of the moon
-  double Phase = (j + 4.867) / 29.53059;
-  return (Phase - (int) Phase);
+// from range 0 .. 1.0: moon phases 0 -> new moon .. waxing .. 0.5 full moon .. waning .. 1 -> new moon
+float getMoonPhase(int d, int m, int y) {
+  int c, e;
+  float jd;
+  if (m < 3) {
+    y--;
+    m += 12;
+  }
+  ++m;
+  c   = 365.25 * y;
+  e   = 30.6  * m;
+  jd  = c + e + d - 694039.09;              /* jd is total days elapsed */
+  jd /= 29.53059;                           /* divide by the moon cycle (29.53 days) */
+  jd -= (int)jd;                            /* subtract integer part to leave fractional part of jd */
+  jd = (hemisphere == SOUTH) ? 1 - jd : jd; /* consider hemisphere */
+  return jd;
+}
+
+String moonPhase(int d, int m, int y) {
+  const float phase = getMoonPhase(d, m, y);
+  /* scale fraction from 0-8 and round by adding 0.5; 0 and 8 are the same phase so modulo 8 for 0 */
+  const uint8_t b = (uint8_t)(phase * 8 + 0.5) & 7;
+  if (b == 0) return TXT_MOON_NEW;              // New;              0%  illuminated
+  if (b == 1) return TXT_MOON_WAXING_CRESCENT;  // Waxing crescent; 25%  illuminated
+  if (b == 2) return TXT_MOON_FIRST_QUARTER;    // First quarter;   50%  illuminated
+  if (b == 3) return TXT_MOON_WAXING_GIBBOUS;   // Waxing gibbous;  75%  illuminated
+  if (b == 4) return TXT_MOON_FULL;             // Full;            100% illuminated
+  if (b == 5) return TXT_MOON_WANING_GIBBOUS;   // Waning gibbous;  75%  illuminated
+  if (b == 6) return TXT_MOON_THIRD_QUARTER;    // Third quarter;   50%  illuminated
+  if (b == 7) return TXT_MOON_WANING_CRESCENT;  // Waning crescent; 25%  illuminated
+  return "";
 }
 
 

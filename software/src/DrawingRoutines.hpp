@@ -61,8 +61,8 @@ void drawStringMaxWidth(int16_t x, int16_t y, uint16_t text_width, char *text, c
 
 #define largeIcon true
 #define smallIcon false
-#define large 11
-#define small 5
+#define large 19
+#define small 11
 
 
 String windDegToDirection(float winddirection) {
@@ -192,104 +192,52 @@ void drawGraph(int x_pos, int y_pos, int gwidth, int gheight, float y1Min, float
   last_x = x_pos + 1;
   last_y = y_pos + (y1Max - constrain(dataArray[1], y1Min, y1Max)) / (y1Max - y1Min) * gheight;
   display.drawRect(x_pos, y_pos, gwidth + 3, gheight + 2, GxEPD_BLACK);
-  u8g2Fonts.setFont(u8g2_font_helvB08_tf);
-  drawString(x_pos + gwidth / 2, y_pos - 12, title, TOP_CENTER);
+  u8g2Fonts.setFont(u8g2_font_helvB12_tf);
+  const uint16_t fHeight = u8g2Fonts.getFontAscent() - u8g2Fonts.getFontDescent();
+  drawString(x_pos + gwidth / 2, y_pos - 4, title, BOTTOM_CENTER);
   // Draw the data
   for (int gx = 1; gx < readings; gx++) {
-    x2 = x_pos + gx * gwidth / (readings - 1) - 1 ; // max_readings is the global variable that sets the maximum data that can be plotted
     y2 = y_pos + (y1Max - constrain(dataArray[gx], y1Min, y1Max)) / (y1Max - y1Min) * gheight + 1;
     if (barchart_mode) {
-      display.fillRect(x2, y2, (gwidth / readings) - 1, y_pos + gheight - y2 + 1, GxEPD_BLACK);
+      x2 = x_pos + (gx - 1) * gwidth / (readings - 1) + 2;
+      display.fillRect(x2, y2, (gwidth / readings) - 1, y_pos + gheight - y2 + 2, GxEPD_BLACK);
     } else {
+      x2 = x_pos + gx * gwidth / (readings - 1) - 1; // max_readings is the global variable that sets the maximum data that can be plotted
       display.drawLine(last_x, last_y, x2, y2, GxEPD_BLACK);
+      last_x = x2;
+      last_y = y2;
     }
-    last_x = x2;
-    last_y = y2;
   }
   //Draw the Y-axis scale
 #define number_of_dashes 15
   for (int spacing = 0; spacing <= y_minor_axis; spacing++) {
-    for (int j = 0; j < number_of_dashes; j++) { // Draw dashed graph grid lines
-      if (spacing < y_minor_axis) display.drawFastHLine((x_pos + 3 + j * gwidth / number_of_dashes), y_pos + (gheight * spacing / y_minor_axis), gwidth / (2 * number_of_dashes), GxEPD_BLACK);
+    if (spacing < y_minor_axis) {
+      for (int j = 0; j < number_of_dashes; j++) // Draw dashed graph grid lines
+        display.drawFastHLine((x_pos + 3 + j * gwidth / number_of_dashes), y_pos + (gheight * spacing / y_minor_axis), gwidth / (2 * number_of_dashes), GxEPD_BLACK);
     }
-    if ((y1Max - (float)(y1Max - y1Min) / y_minor_axis * spacing) < 5 || title == TXT_PRESSURE_IN) {
-      drawString(x_pos, y_pos + gheight * spacing / y_minor_axis - 5, String((y1Max - (float)(y1Max - y1Min) / y_minor_axis * spacing + 0.01), 1).c_str(), TOP_RIGHT);
-    } else {
-      if (y1Min < 1 && y1Max < 10)
-        drawString(x_pos - 3, y_pos + gheight * spacing / y_minor_axis - 5, String((y1Max - (float)(y1Max - y1Min) / y_minor_axis * spacing + 0.01), 1).c_str(), TOP_RIGHT);
-      else
-        drawString(x_pos - 3, y_pos + gheight * spacing / y_minor_axis - 5, String((y1Max - (float)(y1Max - y1Min) / y_minor_axis * spacing + 0.01), 0).c_str(), TOP_RIGHT);
-    }
+    drawString(x_pos - 3, y_pos + (gheight + 1) * spacing / y_minor_axis - 1, String((y1Max - (float)(y1Max - y1Min) / y_minor_axis * spacing + 0.01), (y1Max < 10) ? 1 : 0).c_str(), MIDDLE_RIGHT);
   }
   for (int i = 0; i <= 2; i++) {
-    drawString(15 + x_pos + gwidth / 3 * i, y_pos + gheight + 3, String(i).c_str(), TOP_LEFT);
+    drawString(x_pos + gwidth * (i * 2 + 1) / 6, y_pos + gheight + 2, String(i).c_str(), TOP_CENTER);
   }
-  drawString(x_pos + gwidth / 2, y_pos + gheight + 10, TXT_DAYS, TOP_CENTER);
+  drawString(x_pos + gwidth / 2, y_pos + gheight + fHeight, TXT_DAYS, TOP_CENTER);
 }
 
 
 void drawMoon(int x, int y, int dd, int mm, int yy) {
-  const int diameter = 38;
-  double phase = normalizedMoonPhase(dd, mm, yy);
-  if (hemisphere == SOUTH) phase = 1 - phase;
-  // Draw dark part of moon
-  display.fillCircle(x + diameter - 1, y + diameter, diameter / 2 + 1, GxEPD_BLACK);
-  const int number_of_lines = 90;
-  for (double ypos = 0; ypos <= 45; ypos++) {
-    double xpos = sqrt(45 * 45 - ypos * ypos);
-    // Determine the edges of the lighted part of the moon
-    double rpos = 2 * xpos;
-    double xpos1, xpos2;
-    if (phase < 0.5) {
-      xpos1 = - xpos;
-      xpos2 = (rpos - 2 * phase * rpos - xpos);
-    } else {
-      xpos1 = xpos;
-      xpos2 = (xpos - 2 * phase * rpos + rpos);
-    }
-    // Draw light part of moon
-    double pW1x = (xpos1 + number_of_lines) / number_of_lines * diameter + x;
-    double pW1y = (number_of_lines - ypos)  / number_of_lines * diameter + y;
-    double pW2x = (xpos2 + number_of_lines) / number_of_lines * diameter + x;
-    double pW2y = (number_of_lines - ypos)  / number_of_lines * diameter + y;
-    double pW3x = (xpos1 + number_of_lines) / number_of_lines * diameter + x;
-    double pW3y = (ypos + number_of_lines)  / number_of_lines * diameter + y;
-    double pW4x = (xpos2 + number_of_lines) / number_of_lines * diameter + x;
-    double pW4y = (ypos + number_of_lines)  / number_of_lines * diameter + y;
-    display.drawLine(pW1x, pW1y, pW2x, pW2y, GxEPD_WHITE);
-    display.drawLine(pW3x, pW3y, pW4x, pW4y, GxEPD_WHITE);
+  const uint8_t radius = 50;
+  x += radius;
+  y += radius;
+  const float phase = getMoonPhase(dd, mm, yy);
+  float sliceWidth, xpos, moonSliceWidth;
+  for (uint8_t ypos = 0; ypos < radius; ypos++) {
+    sliceWidth = sqrt(radius * radius - ypos * ypos);
+    xpos = x + (phase <= 0.5f ? -sliceWidth : sliceWidth);
+    moonSliceWidth = sliceWidth * 4.0f * (0.5f - phase);
+    display.drawFastHLine(xpos, y - ypos, moonSliceWidth, GxEPD_BLACK);
+    display.drawFastHLine(xpos, y + ypos, moonSliceWidth, GxEPD_BLACK);
   }
-  display.drawCircle(x + diameter - 1, y + diameter, diameter / 2 + 1, GxEPD_BLACK);
-}
-
-
-String moonPhase(int d, int m, int y) {
-  int c, e;
-  double jd;
-  int b;
-  if (m < 3) {
-    y--;
-    m += 12;
-  }
-  ++m;
-  c   = 365.25 * y;
-  e   = 30.6  * m;
-  jd  = c + e + d - 694039.09;     /* jd is total days elapsed */
-  jd /= 29.53059;                  /* divide by the moon cycle (29.53 days) */
-  b   = jd;                        /* int(jd) -> b, take integer part of jd */
-  jd -= b;                         /* subtract integer part to leave fractional part of original jd */
-  b   = jd * 8 + 0.5;              /* scale fraction from 0-8 and round by adding 0.5 */
-  b   = b & 7;                     /* 0 and 8 are the same phase so modulo 8 for 0 */
-  if (hemisphere == SOUTH) b = 7 - b;
-  if (b == 0) return TXT_MOON_NEW;              // New;              0%  illuminated
-  if (b == 1) return TXT_MOON_WAXING_CRESCENT;  // Waxing crescent; 25%  illuminated
-  if (b == 2) return TXT_MOON_FIRST_QUARTER;    // First quarter;   50%  illuminated
-  if (b == 3) return TXT_MOON_WAXING_GIBBOUS;   // Waxing gibbous;  75%  illuminated
-  if (b == 4) return TXT_MOON_FULL;             // Full;            100% illuminated
-  if (b == 5) return TXT_MOON_WANING_GIBBOUS;   // Waning gibbous;  75%  illuminated
-  if (b == 6) return TXT_MOON_THIRD_QUARTER;    // Third quarter;   50%  illuminated
-  if (b == 7) return TXT_MOON_WANING_CRESCENT;  // Waning crescent; 25%  illuminated
-  return "";
+  display.drawCircle(x, y, radius, GxEPD_BLACK);
 }
 
 
@@ -552,16 +500,16 @@ void haze(int x, int y, bool iconSize, String iconName) {
 
 
 void cloudCover(int x, int y, int cCover) {
-  addcloud(x - 9, y - 3, small * 0.5, 2); // Cloud top left
-  addcloud(x + 3, y - 3, small * 0.5, 2); // Cloud top right
-  addcloud(x, y,         small * 0.5, 2); // Main cloud
-  u8g2Fonts.setFont(u8g2_font_helvB08_tf);
-  drawString(x + 15, y - 5, String(String(cCover) + "%").c_str(), TOP_LEFT);
+  addcloud(x - 9, y - 3, small * 0.3, 2); // Cloud top left
+  addcloud(x + 3, y - 3, small * 0.3, 2); // Cloud top right
+  addcloud(x, y,         small * 0.3, 2); // Main cloud
+  u8g2Fonts.setFont(u8g2_font_helvB12_tf);
+  drawString(x + small * 2, y - 5, String(String(cCover) + "%").c_str(), MIDDLE_LEFT);
 }
 
 
 void visibility(int x, int y, String visi) {
-  y = y - 3; //
+  y = y + 4;
   float start_angle = 0.52, end_angle = 2.61;
   int r = 10;
   for (float i = start_angle; i < end_angle; i = i + 0.05) {
@@ -574,8 +522,8 @@ void visibility(int x, int y, String visi) {
     display.drawPixel(x + r * cos(i), 1 + y + r / 2 + r * sin(i), GxEPD_BLACK);
   }
   display.fillCircle(x, y, r / 4, GxEPD_BLACK);
-  u8g2Fonts.setFont(u8g2_font_helvB08_tf);
-  drawString(x + 12, y - 3, visi.c_str(), TOP_LEFT);
+  u8g2Fonts.setFont(u8g2_font_helvB12_tf);
+  drawString(x + 12, y - 2, visi.c_str(), MIDDLE_LEFT);
 }
 
 
@@ -587,7 +535,6 @@ void nodata(int x, int y, bool iconSize, String iconName) {
 
 
 void displayWXicon(int x, int y, String iconName, bool iconSize) {
-  Serial.println(iconName);
   if      (iconName == "01d" || iconName == "01n")  sunny(x, y, iconSize, iconName);
   else if (iconName == "02d" || iconName == "02n")  mostlySunny(x, y, iconSize, iconName);
   else if (iconName == "03d" || iconName == "03n")  cloudy(x, y, iconSize, iconName);
@@ -621,13 +568,14 @@ void drawBattery(int x, int y) {
 
 
 void drawHeadingSection(const char *dateStr, const char *timeStr) {
-  u8g2Fonts.setFont(u8g2_font_helvB08_tf);
+  u8g2Fonts.setFont(u8g2_font_helvB18_tf);
   const String owmCity = preferences.getString("OWM_CITY");
   drawString(display.width() >> 1, 0, owmCity.c_str(), TOP_RIGHT);
-  drawString(display.width(), 0, dateStr, TOP_RIGHT);
-  drawString(4, 0, timeStr, TOP_LEFT);
+  drawString(display.width() - 2, 0, dateStr, TOP_RIGHT);
+  drawString(2, 0, timeStr, TOP_LEFT);
   drawBattery(65, 12);
-  display.drawLine(0, 12, display.width(), 12, GxEPD_BLACK);
+  display.drawFastHLine(0, (u8g2Fonts.getFontAscent() - u8g2Fonts.getFontDescent()) * 5 / 4, display.width(), GxEPD_BLACK);
+  display.drawFastHLine(0, (u8g2Fonts.getFontAscent() - u8g2Fonts.getFontDescent()) * 5 / 4 + 1, display.width(), GxEPD_BLACK);
 }
 
 
@@ -660,20 +608,22 @@ void drawMainWeatherSection(int x, int y) {
 
 
 void drawForecastWeather(int x, int y, int index) {
-  u8g2Fonts.setFont(u8g2_font_helvB08_tf);
-  display.drawRect(x, y, 55, 65, GxEPD_BLACK);
-  display.drawLine(x + 1, y + 13, x + 54, y + 13, GxEPD_BLACK);
-  displayWXicon(x + 28, y + 35, wxForecast[index].icon, smallIcon);
-  drawString(x + 28, y + 1, String(convertUnixTime(wxForecast[index].dt + wxConditions[0].timezone).substring(0,5)).c_str(), TOP_CENTER);
-  drawString(x + 28, y + 50, String(String(wxForecast[index].high, 0) + "° / " + String(wxForecast[index].low, 0) + "°").c_str(), TOP_CENTER);
+  u8g2Fonts.setFont(u8g2_font_helvB12_tf);
+  display.drawRect(x, y, 110, 130, GxEPD_BLACK);
+  display.drawFastHLine(x + 1, y + 22, 109, GxEPD_BLACK);
+  displayWXicon(x + 57, y + 74, wxForecast[index].icon, smallIcon);
+  drawString(x + 55, y + 1, String(convertUnixTime(wxForecast[index].dt + wxConditions[0].timezone).substring(0,5)).c_str(), TOP_CENTER);
+  drawString(x + 55, y + 105, String(String(wxForecast[index].high, 0) + "° / " + String(wxForecast[index].low, 0) + "°").c_str(), TOP_CENTER);
 }
 
 
 void drawForecastSection(int x, int y) {
-  u8g2Fonts.setFont(u8g2_font_helvB10_tf);
-  drawForecastWeather(x, y, 0);
-  drawForecastWeather(x + 56, y, 1);
-  drawForecastWeather(x + 112, y, 2);
+  for(int i = 0; i < 3; i++) {
+    drawForecastWeather(x + i*111, y, i);
+  }
+}
+
+void draw3DayForecastSection(int y) {
   // (x,y,width,height,MinValue, MaxValue, Title, Data Array, AutoScale, ChartMode)
   for (uint8_t r = 0; r < max_readings; r++) {
     if (units == IMPERIAL) {
@@ -685,51 +635,53 @@ void drawForecastSection(int x, int y) {
     }
     temperature_readings[r] = wxForecast[r].temperature;
   }
-  display.drawLine(0, y + 172, display.width(), y + 172, GxEPD_BLACK);
-  //u8g2Fonts.setFont(u8g2_font_helvB12_tf);
-  drawString(display.width() >> 1, y + 176, TXT_FORECAST_VALUES, TOP_CENTER);
-  u8g2Fonts.setFont(u8g2_font_helvB10_tf);
-  drawGraph(30,  215, display.width() >> 2, display.height() / 5, 900, 1050, units == METRIC ? TXT_PRESSURE_HPA : TXT_PRESSURE_IN, pressure_readings, max_readings, autoscale_on, barchart_off);
-  drawGraph(158, 215, display.width() >> 2, display.height() / 5, 10, 30, units == METRIC ? TXT_TEMPERATURE_C : TXT_TEMPERATURE_F, temperature_readings, max_readings, autoscale_on, barchart_off);
-  drawGraph(288, 215, display.width() >> 2, display.height() / 5, 0, 30, units == METRIC ? TXT_RAINFALL_MM : TXT_RAINFALL_IN, rain_readings, max_readings, autoscale_on, barchart_on);
+  display.drawFastHLine(0, y, display.width(), GxEPD_BLACK);
+  display.drawFastHLine(0, y + 1, display.width(), GxEPD_BLACK);
+  u8g2Fonts.setFont(u8g2_font_helvB14_tf);
+  drawString(display.width() >> 1, y + 1, TXT_FORECAST_VALUES, TOP_CENTER);
+  drawGraph(40,  323, display.width() >> 2, display.height() >> 2, 900, 1050, units == METRIC ? TXT_PRESSURE_HPA : TXT_PRESSURE_IN, pressure_readings, max_readings, autoscale_on, barchart_off);
+  drawGraph(310, 323, display.width() >> 2, display.height() >> 2, -10, 40, units == METRIC ? TXT_TEMPERATURE_C : TXT_TEMPERATURE_F, temperature_readings, max_readings, autoscale_on, barchart_off);
+  drawGraph(580, 323, display.width() >> 2, display.height() >> 2, 0, 30, units == METRIC ? TXT_RAINFALL_MM : TXT_RAINFALL_IN, rain_readings, max_readings, autoscale_on, barchart_on);
 }
 
 
 void displayPrecipitationSection(int x, int y) {
-  display.drawRect(x, y - 1, 167, 56, GxEPD_BLACK); // precipitation outline
-  u8g2Fonts.setFont(u8g2_font_helvB10_tf);
+  display.drawRect(x, y - 1, 221, 52, GxEPD_BLACK); // precipitation outline
+  u8g2Fonts.setFont(u8g2_font_helvB14_tf);
   //if (wxForecast[1].rainfall > 0.005) { // Ignore small amounts
-    drawString(x + 5, y + 7, String(String(wxForecast[1].rainfall, 2) + (units == METRIC ? "mm" : "in")).c_str(), TOP_LEFT); // Only display rainfall total today if > 0
-    addraindrop(x + 65 - (units == IMPERIAL ? 10 : 0), y + 16, 7);
+    drawString(x + 77, y + 9, String(String(wxForecast[1].rainfall, 2) + (units == METRIC ? "mm" : "in")).c_str(), MIDDLE_RIGHT); // Only display rainfall total today if > 0
+    addraindrop(x + 88, y + 13, 7);
   //}
   //if (wxForecast[1].snowfall > 0.005)  // Ignore small amounts
-    drawString(x + 5, y + 27, String(String(wxForecast[1].snowfall, 2) + (units == METRIC ? "mm" : "in") + " * *").c_str(), TOP_LEFT); // Only display snowfall total today if > 0
+    drawString(x + 105, y + 33, String(String(wxForecast[1].snowfall, 2) + (units == METRIC ? "mm" : "in") + " * *").c_str(), MIDDLE_RIGHT); // Only display snowfall total today if > 0
+  if (wxConditions[0].visibility > 0) visibility(x+145, y + 8, String(wxConditions[0].visibility) + "M");
+  if (wxConditions[0].cloudcover > 0) cloudCover(x+151, y + 39, wxConditions[0].cloudcover);
 }
 
 
 void drawAstronomySection(int x, int y) {
-  u8g2Fonts.setFont(u8g2_font_helvB08_tf);
-  display.drawRect(x, y + 64, 167, 48, GxEPD_BLACK);
-  drawString(x + 3, y + 66, String(convertUnixTime(wxConditions[0].sunrise + wxConditions[0].timezone).substring(0, (units == METRIC ? 5 : 7)) + " " + TXT_SUNRISE).c_str(), TOP_LEFT);
-  drawString(x + 3, y + 81, String(convertUnixTime(wxConditions[0].sunset + wxConditions[0].timezone).substring(0, (units == METRIC ? 5 : 7)) + " " + TXT_SUNSET).c_str(), TOP_LEFT);
+  const int boxHeight = 63;
+  u8g2Fonts.setFont(u8g2_font_helvB14_tf);
+  display.drawRect(x, y, 221, boxHeight, GxEPD_BLACK);
+  drawString(x + 4, y + boxHeight/6 - 2, String(convertUnixTime(wxConditions[0].sunrise + wxConditions[0].timezone).substring(0, (units == METRIC ? 5 : 7)) + " " + TXT_SUNRISE).c_str(), MIDDLE_LEFT);
+  drawString(x + 4, y + boxHeight/2 - 2, String(convertUnixTime(wxConditions[0].sunset + wxConditions[0].timezone).substring(0, (units == METRIC ? 5 : 7)) + " " + TXT_SUNSET).c_str(), MIDDLE_LEFT);
   time_t now = time(NULL);
   struct tm *now_utc  = gmtime(&now);
   const int day_utc   = now_utc->tm_mday;
   const int month_utc = now_utc->tm_mon + 1;
   const int year_utc  = now_utc->tm_year + 1900;
-  drawString(x + 3, y + 96, moonPhase(day_utc, month_utc, year_utc).c_str(), TOP_LEFT);
-  drawMoon(x + 105, y + 50, day_utc, month_utc, year_utc);
+  drawString(x + 4, y + boxHeight*5/6 - 2, moonPhase(day_utc, month_utc, year_utc).c_str(), MIDDLE_LEFT);
+  drawMoon(696, 172, day_utc, month_utc, year_utc);
 }
 
 
 void displayWeather(const char *dateStr, const char *timeStr) {
-  drawHeadingSection(dateStr, timeStr); // Top line of the display
-  drawMainWeatherSection(172, 70);      // Centre section of display for Location, temperature, Weather report, current Wx Symbol and wind direction
-  drawForecastSection(233, 15);         // 3hr forecast boxes
-  displayPrecipitationSection(233, 82); // Precipitation section
-  if (wxConditions[0].visibility > 0) visibility(335, 100, String(wxConditions[0].visibility) + "M");
-  if (wxConditions[0].cloudcover > 0) cloudCover(350, 125, wxConditions[0].cloudcover);
-  drawAstronomySection(233, 74);        // Astronomy section Sun rise/set, Moon phase and Moon icon
+  drawHeadingSection(dateStr, timeStr);  // Top line of the display
+  //drawMainWeatherSection(172, 70);       // Centre section of display for Location, temperature, Weather report, current Wx Symbol and wind direction
+  drawForecastSection(468, 33);          // 3hr forecast boxes
+  draw3DayForecastSection(282);          // 3 day forcast centered box
+  displayPrecipitationSection(468, 165); // Precipitation section
+  drawAstronomySection(468, 217);        // Astronomy section Sun rise/set, Moon phase and Moon icon
 }
 
 
