@@ -104,20 +104,19 @@ void arrow(int x, int y, int asize, float aangle, int pwidth, int plength) {
 
 
 void displayDisplayWindSection(int x, int y, float angle, float windspeed, int cradius) {
-  arrow(x, y, cradius, angle, 12, 18); // Show wind direction on outer circle of width and length
-  u8g2Fonts.setFont(u8g2_font_helvB08_tf);
+  arrow(x, y, cradius, angle, cradius * 0.27, cradius * 0.4); // Show wind direction on outer circle of width and length
+  u8g2Fonts.setFont(u8g2_font_helvB12_tf);
   int dxo, dyo, dxi, dyi;
-  display.drawLine(0, 15, 0, y + cradius + 30, GxEPD_BLACK);
   display.drawCircle(x, y, cradius, GxEPD_BLACK);     // Draw compass circle
   display.drawCircle(x, y, cradius + 1, GxEPD_BLACK); // Draw compass circle
   display.drawCircle(x, y, cradius * 0.7, GxEPD_BLACK); // Draw compass inner circle
   for (float a = 0; a < 360; a = a + 22.5) {
     dxo = cradius * cos((a - 90) * PI / 180);
     dyo = cradius * sin((a - 90) * PI / 180);
-    if (a == 45)  drawString(dxo + x + 10, dyo + y - 11, TXT_NE, TOP_CENTER);
+    if (a == 45)  drawString(dxo + x + 18, dyo + y - 11, TXT_NE, TOP_CENTER);
     if (a == 135) drawString(dxo + x + 10, dyo + y + 1,  TXT_SE, TOP_CENTER);
-    if (a == 225) drawString(dxo + x - 15, dyo + y - 3,  TXT_SW, TOP_CENTER);
-    if (a == 315) drawString(dxo + x - 13, dyo + y - 11, TXT_NW, TOP_CENTER);
+    if (a == 225) drawString(dxo + x - 16, dyo + y - 3,  TXT_SW, TOP_CENTER);
+    if (a == 315) drawString(dxo + x - 18, dyo + y - 11, TXT_NW, TOP_CENTER);
     dxi = dxo * 0.9;
     dyi = dyo * 0.9;
     display.drawLine(dxo + x, dyo + y, dxi + x, dyi + y, GxEPD_BLACK);
@@ -127,31 +126,42 @@ void displayDisplayWindSection(int x, int y, float angle, float windspeed, int c
     dyi = dyo * 0.9;
     display.drawLine(dxo + x, dyo + y, dxi + x, dyi + y, GxEPD_BLACK);
   }
-  drawString(x, y - cradius - 13,     TXT_N, TOP_CENTER);
-  drawString(x, y + cradius + 2,      TXT_S, TOP_CENTER);
-  drawString(x - cradius - 10, y - 6, TXT_W, TOP_CENTER);
-  drawString(x + cradius + 8,  y - 6, TXT_E, TOP_CENTER);
-  drawString(x, y - 21, windDegToDirection(angle).c_str(), TOP_CENTER);
+  drawString(x, y - cradius - 19,     TXT_N, TOP_CENTER);
+  drawString(x, y + cradius,      TXT_S, TOP_CENTER);
+  drawString(x - cradius - 10, y - 9, TXT_W, TOP_CENTER);
+  drawString(x + cradius + 8,  y - 9, TXT_E, TOP_CENTER);
+  drawString(x, y - 31, windDegToDirection(angle).c_str(), TOP_CENTER);
   drawString(x, y + 11, String(String(angle, 0) + "°").c_str(), TOP_CENTER);
-  drawString(x, y - 4, String(String(windspeed, 1) + (units == METRIC ? "m/s" : "mph")).c_str(), TOP_CENTER);
+  drawString(x, y - 10, String(String(windspeed, 1) + (units == METRIC ? "m/s" : "mph")).c_str(), TOP_CENTER);
 }
 
 
 void drawPressureAndTrend(int x, int y, float pressure, String slope) {
-  drawString(x, y - 1, String(String(pressure, (units == METRIC ? 0 : 1)) + (units == METRIC ? "hPa" : "in")).c_str(), TOP_CENTER);
-  x = x + 40; y = y + 2;
+  u8g2Fonts.setFont(u8g2_font_helvB14_tf);
+  drawString(x, y, String(String(pressure, (units == METRIC ? 0 : 1)) + (units == METRIC ? "hPa" : "in")).c_str(), TOP_LEFT);
+#define slopeSize 14
+#define halfSSize (slopeSize >> 1)
+  x = x + 85; y = y + slopeSize;
   if      (slope == "+") {
-    display.drawLine(x,  y, x + 4, y - 4, GxEPD_BLACK);
-    display.drawLine(x + 4, y - 4, x + 8, y, GxEPD_BLACK);
+    display.drawLine(x,  y, x + halfSSize, y - halfSSize, GxEPD_BLACK);
+    display.drawLine(x + halfSSize, y - halfSSize, x + slopeSize, y, GxEPD_BLACK);
+    display.drawLine(x,  y+1, x + halfSSize, y+1 - halfSSize, GxEPD_BLACK);
+    display.drawLine(x + halfSSize, y+1 - halfSSize, x + slopeSize, y+1, GxEPD_BLACK);
   }
   else if (slope == "0") {
-    display.drawLine(x + 4, y - 4, x + 8, y, GxEPD_BLACK);
-    display.drawLine(x + 4, y + 4, x + 8, y, GxEPD_BLACK);
+    display.drawLine(x + halfSSize, y - halfSSize, x + slopeSize, y, GxEPD_BLACK);
+    display.drawLine(x + halfSSize, y + halfSSize, x + slopeSize, y, GxEPD_BLACK);
+    display.drawLine(x + halfSSize, y+1 - halfSSize, x + slopeSize, y+1, GxEPD_BLACK);
+    display.drawLine(x + halfSSize, y+1 + halfSSize, x + slopeSize, y+1, GxEPD_BLACK);
   }
   else if (slope == "-") {
-    display.drawLine(x,  y, x + 4, y + 4, GxEPD_BLACK);
-    display.drawLine(x + 4, y + 4, x + 8, y, GxEPD_BLACK);
+    display.drawLine(x,  y - halfSSize, x + halfSSize, y, GxEPD_BLACK);
+    display.drawLine(x + halfSSize, y, x + slopeSize, y - halfSSize, GxEPD_BLACK);
+    display.drawLine(x,  y+1 - halfSSize, x + halfSSize, y+1, GxEPD_BLACK);
+    display.drawLine(x + halfSSize, y+1, x + slopeSize, y+1 - halfSSize, GxEPD_BLACK);
   }
+#undef slopeSize
+#undef halfSSize
 }
 
 
@@ -402,8 +412,7 @@ void cloudy(int x, int y, bool iconSize, String iconName) {
     if (iconName.endsWith("n")) addmoon(x, y, scale, iconSize);
     linesize = 1;
     addcloud(x, y, scale, linesize);
-  }
-  else {
+  } else {
     y += 10;
     if (iconName.endsWith("n")) addmoon(x, y, scale, iconSize);
     addcloud(x + 30, y - 35, 5, linesize); // Cloud top right
@@ -419,7 +428,7 @@ void rain(int x, int y, bool iconSize, String iconName) {
     scale = small;
     linesize = 1;
   }
-  if (iconName.endsWith("n")) addmoon(x, y + 10, scale, iconSize);
+  if (iconName.endsWith("n")) addmoon(x, y, scale, iconSize);
   addcloud(x, y, scale, linesize);
   addrain(x, y, scale, iconSize);
 }
@@ -538,7 +547,7 @@ void displayWXicon(int x, int y, String iconName, bool iconSize) {
   if      (iconName == "01d" || iconName == "01n")  sunny(x, y, iconSize, iconName);
   else if (iconName == "02d" || iconName == "02n")  mostlySunny(x, y, iconSize, iconName);
   else if (iconName == "03d" || iconName == "03n")  cloudy(x, y, iconSize, iconName);
-  else if (iconName == "04d" || iconName == "04n")  mostlySunny(x, y, iconSize, iconName);
+  else if (iconName == "04d" || iconName == "04n")  mostlyCloudy(x, y, iconSize, iconName);
   else if (iconName == "09d" || iconName == "09n")  chanceRain(x, y, iconSize, iconName);
   else if (iconName == "10d" || iconName == "10n")  rain(x, y, iconSize, iconName);
   else if (iconName == "11d" || iconName == "11n")  tstorms(x, y, iconSize, iconName);
@@ -579,31 +588,34 @@ void drawHeadingSection(const char *dateStr, const char *timeStr) {
 }
 
 
-void drawMainWx(int x, int y) {
+void drawTemperature(int x, int y) {
+  u8g2Fonts.setFont(u8g2_font_helvB24_tf);
+  drawString(x, y, String(String(wxConditions[0].temperature, 1) + "°" + (units == METRIC ? "C" : "F")).c_str(), TOP_RIGHT); // Show current Temperature
   u8g2Fonts.setFont(u8g2_font_helvB14_tf);
-  drawString(x - 25, y - 24, String(String(wxConditions[0].temperature, 1) + "°" + (units == METRIC ? "C" : "F")).c_str(), TOP_CENTER); // Show current Temperature
-  u8g2Fonts.setFont(u8g2_font_helvB12_tf);
-  drawString(x - 15, y - 5, String(String(wxConditions[0].high, 0) + "° | " + String(wxConditions[0].low, 0) + "°").c_str(), TOP_CENTER); // Show forecast high and Low
-  drawString(x + 30, y - 22, String(String(wxConditions[0].humidity, 0) + "%").c_str(), TOP_CENTER);
-  u8g2Fonts.setFont(u8g2_font_helvB10_tf);
-  drawString(x + 32, y - 3, "RH", TOP_CENTER);
+  drawString(x, y + 34, String(String(wxConditions[0].high, 0) + "° | " + String(wxConditions[0].low, 0) + "°").c_str(), TOP_RIGHT); // Show forecast high and Low
+}
+
+
+void drawHumidity(int x, int y) {
+  u8g2Fonts.setFont(u8g2_font_helvB14_tf);
+  drawString(x, y, String(String(wxConditions[0].humidity, 0) + "% " + TXT_RH).c_str(), TOP_LEFT);
 }
 
 
 void drawMainWeatherSection(int x, int y) {
-  displayDisplayWindSection(x - 115, y - 3, wxConditions[0].winddir, wxConditions[0].windspeed, 40);
-  displayWXicon(x + 5, y - 5, wxConditions[0].icon, largeIcon);
-  u8g2Fonts.setFont(u8g2_font_helvB10_tf);
-  drawPressureAndTrend(x - 120, y + 52, wxConditions[0].pressure, wxConditions[0].trend);
-  u8g2Fonts.setFont(u8g2_font_helvB12_tf);
+  displayDisplayWindSection(x + 120, y + 85, wxConditions[0].winddir, wxConditions[0].windspeed, 67);
+  displayWXicon(x + 300, y + 100, wxConditions[0].icon, largeIcon);
+  drawTemperature(x + 460, y);
+  drawPressureAndTrend(x + 3, y + 156, wxConditions[0].pressure, wxConditions[0].trend);
+  drawHumidity(x + 200, y + 156);
   String wxDescription = wxConditions[0].forecast0;
   if (wxConditions[0].forecast1 != "") wxDescription += " & " +  wxConditions[0].forecast1;
   if (wxConditions[0].forecast2 != "" && wxConditions[0].forecast1 != wxConditions[0].forecast2) wxDescription += " & " +  wxConditions[0].forecast2;
   char *description = titleCase(wxDescription.begin());
   Serial.println(description);
-  drawStringMaxWidth(x - 170, y + 69, 28, description, TOP_LEFT);
-  drawMainWx(x, y + 50);
-  display.drawRect(0, y + 68, 232, 48, GxEPD_BLACK);
+  u8g2Fonts.setFont(u8g2_font_helvB18_tf);
+  drawStringMaxWidth(x + 3, y + 184, 28, description, TOP_LEFT);
+  display.drawRect(x, y + 184, 467, 63, GxEPD_BLACK);
 }
 
 
@@ -677,7 +689,7 @@ void drawAstronomySection(int x, int y) {
 
 void displayWeather(const char *dateStr, const char *timeStr) {
   drawHeadingSection(dateStr, timeStr);  // Top line of the display
-  //drawMainWeatherSection(172, 70);       // Centre section of display for Location, temperature, Weather report, current Wx Symbol and wind direction
+  drawMainWeatherSection(0, 33);         // Centre section of display for Location, temperature, Weather report, current Wx Symbol and wind direction
   drawForecastSection(468, 33);          // 3hr forecast boxes
   draw3DayForecastSection(282);          // 3 day forcast centered box
   displayPrecipitationSection(468, 165); // Precipitation section

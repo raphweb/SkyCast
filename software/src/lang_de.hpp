@@ -64,6 +64,7 @@ const char *TXT_W   = "W";
 const char *TXT_WNW = "WNW";
 const char *TXT_NW  = "NW";
 const char *TXT_NNW = "NNW";
+const char *TXT_RH  = "relative Luftfeuchtigkeit";
 
 const char *dateFormat = "%s, %02u. %s %04u";
 
