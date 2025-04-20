@@ -35,22 +35,26 @@ void drawString(int16_t x, int16_t y, const char *text, const AlignmentKind alig
     u8g2Fonts.drawUTF8(x, y, text);
 }
 
-void drawStringMaxWidth(int16_t x, int16_t y, uint16_t text_width, char *text, const AlignmentKind alignment = BOTTOM_LEFT) {
-    const uint16_t w = u8g2Fonts.getUTF8Width(text);
-    const uint16_t h = u8g2Fonts.getFontAscent() - u8g2Fonts.getFontDescent();
-    if (alignment & RIGHT)  x -= w;
-    if (alignment & CENTER) x -= w /2;
-    if (alignment & MIDDLE) y += h / 2;
-    if (alignment & TOP)    y += h;
-    size_t length = strlen(text);
-    if (length > text_width) {
-        text[text_width-1] = 0;
+void drawStringMaxWidth(int16_t x, int16_t y, uint16_t maxWidth, const char *text, const AlignmentKind alignment = BOTTOM_LEFT) {
+  const uint16_t w = u8g2Fonts.getUTF8Width(text);
+  const uint16_t h = u8g2Fonts.getFontAscent() - u8g2Fonts.getFontDescent();
+  if (alignment & RIGHT)  x -= w;
+  if (alignment & CENTER) x -= w /2;
+  if (alignment & MIDDLE) y += h / 2;
+  if (alignment & TOP)    y += h;
+  char *word;
+  char *rest = strdup(text);
+  uint16_t curPixW = 0;
+  uint8_t lineNr = 0;
+  while ((word = strtok_r(rest, " ", &rest))) {
+    uint16_t ww = u8g2Fonts.getUTF8Width(word);
+    if (curPixW + ww >= maxWidth) {
+      lineNr++;
+      curPixW = 0;
     }
-    u8g2Fonts.drawUTF8(x, y, text);
-    if (length > text_width) {
-        text = &(text[text_width]);
-        u8g2Fonts.drawUTF8(x, y + h + 10, text);
-    }
+    u8g2Fonts.drawUTF8(x + curPixW, y + lineNr*(h + 10), word);
+    curPixW += ww + 10;
+  }
 }
 
 
@@ -602,7 +606,7 @@ void drawHumidity(int x, int y) {
 }
 
 
-void drawMainWeatherSection(int x, int y) {
+void drawMainWeatherSection(int x, int y, char *bdMessage) {
   displayDisplayWindSection(x + 120, y + 85, wxConditions[0].winddir, wxConditions[0].windspeed, 67);
   displayWXicon(x + 300, y + 100, wxConditions[0].icon, largeIcon);
   drawTemperature(x + 460, y);
@@ -611,10 +615,10 @@ void drawMainWeatherSection(int x, int y) {
   String wxDescription = wxConditions[0].forecast0;
   if (wxConditions[0].forecast1 != "") wxDescription += " & " +  wxConditions[0].forecast1;
   if (wxConditions[0].forecast2 != "" && wxConditions[0].forecast1 != wxConditions[0].forecast2) wxDescription += " & " +  wxConditions[0].forecast2;
-  char *description = titleCase(wxDescription.begin());
+  char *description = ((0 == strlen(bdMessage)) ? titleCase(wxDescription.begin()) : bdMessage);
   Serial.println(description);
   u8g2Fonts.setFont(u8g2_font_helvB18_tf);
-  drawStringMaxWidth(x + 3, y + 184, 28, description, TOP_LEFT);
+  drawStringMaxWidth(x + 3, y + 184, 464, description, TOP_LEFT);
   display.drawRect(x, y + 184, 467, 63, GxEPD_BLACK);
 }
 
@@ -687,13 +691,13 @@ void drawAstronomySection(int x, int y) {
 }
 
 
-void displayWeather(const char *dateStr, const char *timeStr) {
-  drawHeadingSection(dateStr, timeStr);  // Top line of the display
-  drawMainWeatherSection(0, 33);         // Centre section of display for Location, temperature, Weather report, current Wx Symbol and wind direction
-  drawForecastSection(468, 33);          // 3hr forecast boxes
-  draw3DayForecastSection(282);          // 3 day forcast centered box
-  displayPrecipitationSection(468, 165); // Precipitation section
-  drawAstronomySection(468, 217);        // Astronomy section Sun rise/set, Moon phase and Moon icon
+void displayWeather(const char *dateStr, const char *timeStr, char *bdMessage) {
+  drawHeadingSection(dateStr, timeStr);     // Top line of the display
+  drawMainWeatherSection(0, 33, bdMessage); // Centre section of display for Location, temperature, Weather report, current Wx Symbol and wind direction
+  drawForecastSection(468, 33);             // 3hr forecast boxes
+  draw3DayForecastSection(282);             // 3 day forcast centered box
+  displayPrecipitationSection(468, 165);    // Precipitation section
+  drawAstronomySection(468, 217);           // Astronomy section Sun rise/set, Moon phase and Moon icon
 }
 
 

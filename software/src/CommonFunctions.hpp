@@ -1,6 +1,27 @@
 #ifndef COMMON_FUNCTIONS_HPP_
 #define COMMON_FUNCTIONS_HPP_
 
+#include <vector>
+
+struct bDayType {
+  const uint16_t date;
+  const String name;
+};
+
+std::vector<bDayType> bDays {};
+
+String getBDString(int year, int month, int day) {
+  for(const auto& entry:bDays) {
+    if (month == ((entry.date >> 5) & 0b00001111) && day == ((entry.date) & 0b00011111)) {
+      char ret[80];
+      sprintf(ret, bDayStr, entry.name, year - ((entry.date >> 9) & 0b01111111));
+      return ret;
+    }
+    Serial.println("Checking for birthday: " + entry.name);
+  }
+  return "";
+}
+
 float mm_to_inches(float value_mm) {
   return 0.0393701 * value_mm;
 }

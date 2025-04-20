@@ -18,6 +18,7 @@ UnitsEnum           units;
 #include "DrawingRoutines.hpp"
 
 
+String bdMessage = "";
 String timeStr, dateStr;
 int wifi_signal, currentHour = 0, currentMin = 0, currentSec = 0;
 uint64_t startTime = 0;
@@ -36,7 +37,8 @@ void beginSleep() {
   if (offset > sleepDuration/2 * 60) {
     offset -= sleepDuration * 60;
   }
-  esp_sleep_enable_timer_wakeup((sleepTimer - offset) * 1000000LL);
+  sleepTimer -= offset;
+  esp_sleep_enable_timer_wakeup(sleepTimer * 1000000LL);
 #ifdef BUILTIN_LED
   pinMode(BUILTIN_LED, INPUT); // If it's On, turn it off and some boards use GPIO-5 for SPI-SS, which remains low after screen use
   digitalWrite(BUILTIN_LED, HIGH);
@@ -102,6 +104,7 @@ boolean setupTime() {
   currentHour = timeinfo.tm_hour;
   currentMin  = timeinfo.tm_min;
   currentSec  = timeinfo.tm_sec;
+  bdMessage = getBDString(timeinfo.tm_year, timeinfo.tm_mon+1, timeinfo.tm_mday);
   char time_output[30], day_output[30], update_time[30];
   if (units == METRIC) {
     sprintf(day_output, dateFormat, weekday_D[timeinfo.tm_wday], timeinfo.tm_mday, month_M[timeinfo.tm_mon], (timeinfo.tm_year) + 1900);
@@ -124,6 +127,7 @@ void setup() {
   while(!Serial) {}
 #ifdef SAVE_CREDENTIALS
   {
+    #define bDate(d,m,y) ((y-1900) << 9) | (m << 5) | (d)
     preferences.begin("SkyCast");
     preferences.clear();
     preferences.putString("WIFI_SSID", "Ssid");
@@ -135,13 +139,24 @@ void setup() {
     preferences.putString("TIMEZONE", "");
     preferences.putBool("HEMISPHERE", NORTH);
     preferences.putBool("UNITS", METRIC);
+    preferences.putUChar("BD_SIZE", 2);
+    preferences.putUShort("BD_D0", bDate(17,12,1967));
+    preferences.putString("BD_N0", "Gigi");
+    preferences.putUShort("BD_D1", bDate(10, 4,1977));
+    preferences.putString("BD_N1", "Gronkh");
     preferences.end();
+    Serial.println("Updated preferences. Starting deep-sleep...");
     esp_deep_sleep_start();
   }
 #endif
   preferences.begin("SkyCast", true);
   hemisphere = (HemisphereEnum)preferences.getBool("HEMISPHERE", 0);
   units = (UnitsEnum)preferences.getBool("UNITS", 0);
+  for(uint8_t i; i < preferences.getUChar("BD_SIZE"); i++) {
+    uint16_t date = preferences.getUShort(("BD_D" + String(i)).c_str());
+    String name = preferences.getString(("BD_N" + String(i)).c_str());
+    bDays.push_back({date, name});
+  }
   if (startWiFi() == WL_CONNECTED && setupTime() == true) {
     if (currentHour >= wakeupTime && currentHour <= sleepTime) {
       initialiseDisplay(); // Give screen time to initialise by getting weather data!
@@ -158,7 +173,7 @@ void setup() {
         Serial.println("Date: " + dateStr + ", time: " + timeStr);
         display.firstPage();
         do {
-          displayWeather(dateStr.c_str(), timeStr.c_str());
+          displayWeather(dateStr.c_str(), timeStr.c_str(), bdMessage.begin());
         } while (display.nextPage());
       }
     }

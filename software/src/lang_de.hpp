@@ -74,4 +74,7 @@ const char *weekday_D[] =  { "Sonntag", "Montag", "Dienstag", "Mittwoch", "Donne
 //Monat
 const char *month_M[] = { "Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember" };
 
+//Geburtstagsnachricht
+const char *bDayStr = "Strahlender Sonnenschein, %s wird heute %u!";
+
 #endif
